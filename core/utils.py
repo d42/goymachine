@@ -16,36 +16,33 @@ event_dict = {
 class Triggers:
     _triggers = ('link', 'message', 'join', 'part', 'action')
     def __init__(self):
-        for i, t in enumerate(_triggers):
+        for i, t in enumerate(self._triggers):
             setattr(self, t, i)
 
 
-    def is_link(self, event):
-        return event.name is 'PRIVMSG' and 'http' in event.data
-
     def is_message(self, event):
-        return event.name is 'PRIVMSG'
+        return event.name == 'PRIVMSG'
 
-    def is_join(self, event):
-        return self.name is 'JOIN'
-
-    def is_part(self, event):
-        return self.name is 'PART'
+    def is_link(self, event):
+        return event.name == 'PRIVMSG' and 'http' in event.data
 
     def is_action(self, event):
-        return event.name is 'PRIVMSG' and 0x01 in event.data
+        return event.name == 'PRIVMSG' and '\x01' in event.data
+
+    def is_join(self, event):
+        return event.name == 'JOIN'
+
+    def is_part(self, event):
+        return event.name == 'PART'
 
     def to_triggers(self, event):
-        for t in _triggers:
-            if not getattr('is_' + t)(event):
-                yield t
+        for t in self._triggers:
+            if getattr(self, 'is_' + t)(event):
+                yield getattr(self, t)
 
 
 
 triggers = Triggers()
-
-to_trigger(name, data):
-
 
 class ConfigParser(ConfigParser):
     pass
