@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 from core.pluginface import PluginBase, triggered_by, triggers as t
+from core.settings import resources
 import random
 
 
@@ -25,7 +26,9 @@ class BasementCommander(PluginBase):
             'icstot': self.icstont,
             'debuguj': self.debuguj,
             'pszeladuj': self.pszeladuj,
-            'pszyspamuj': self.pszyspamuj
+            'pszyspamuj': self.pszyspamuj,
+            'wololo': self.wololo,
+            'ty janie': self.dzbanie
 
         }
         self.cs = self.settings['callsign']
@@ -77,6 +80,40 @@ class BasementCommander(PluginBase):
         count = self.bot.reload_plugins()
         return 'ok x' + 'D' * count
 
+    def wololo(self, event, conn):
+
+        def herp(nc, mg):
+            nc = list(nc)
+            i = random.randrange(len(nc))
+
+            nc_i = ord(nc[i])
+            derp = nc_i + mg
+
+            derp = sorted([97, derp, 122])[1]
+            a, b = sorted([nc_i, derp])
+            new_c = random.randint(a, b)
+
+            mg += (nc_i - new_c)
+            nc[i] = chr(new_c)
+            return ''.join(nc), mg
+
+        h = lambda s: sum(ord(c) for c in s)
+        current_nick = self.bot.nickname
+        owner_nick = event.source.split('!')[0]
+        print(current_nick, owner_nick)
+
+        δ = (h(owner_nick) - h(current_nick)) % 110
+        nc = current_nick
+
+        print(h(owner_nick) % 110, h(current_nick) % 110)
+
+        while δ:
+            nc, δ = herp(nc, δ)
+
+        print(h(nc) % 10, h(nc) % 11)
+        print(h(owner_nick) % 10, h(owner_nick) % 11)
+        conn.nick(nc)
+
     @authorized
     def pszyspamuj(self, event, conn):
         #import ipdb; ipdb.set_trace()
@@ -87,3 +124,9 @@ class BasementCommander(PluginBase):
 
     def siemacotam(self, event, conn):
         return 'siema nic tu xD'
+
+    def dzbanie(self, event, conn):
+        word = random.choice(resources['an'])
+        adj = random.choice(resources['adj'])
+
+        return 'ty janie {}ie {} xD'.format(word, adj)

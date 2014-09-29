@@ -1,45 +1,24 @@
 from configparser import ConfigParser
-from collections import deque, namedtuple, UserDict
+
+from collections import deque, namedtuple, UserDict, defaultdict
+from functools import wraps
+
+import logging
 import os
 
-from core.exceptions import NoConfigException
 
-event_dict = {
-    '375': 'MOTDSTART',
-    '372': 'MOTD',
-    '376': 'MOTDEND',
-    '353': 'NAMES',
-    '366': 'NAMESEND'
-}
-
-
-class EventListener:
-    def __init__(self, em, method, triggers, single=False):
-        """:type em: IRCEventMachine"""
-
-        self.single = single
-        self.em = em
-        self.method = method
-        self.trigger = trigger
-
-    def subscribe(self):
-        pass
-
-    def unsusbcribe(self):
-        pass
-
-    def __call__(self, *args, **kwargs):
-        if self.single:
-            self.unsusbcribe()
-        self.method(*args, **kwargs)
+log_core = logging.getLogger("core")
+log_glue = logging.getLogger("glue")
+log_plugins = logging.getLogger("plugins")
 
 
 class Triggers:
-    _triggers = ('link', 'message', 'join', 'part', 'action', 'hello')
+    _triggers = ('link', 'message', 'join', 'part', 'action', 'hello', 'init',
+                 'cap_ack')
 
     def __init__(self):
         for i, t in enumerate(self._triggers):
-            setattr(self, t, i)
+            setattr(self, t, t)
 
     def is_message(self, event):
         return event.name == 'PRIVMSG'
@@ -59,10 +38,21 @@ class Triggers:
     def is_hello(self, event):
         return event.name == 'MOTDEND'
 
+    def is_cap_ack(self, event):
+        return event.name == 'CAP' and event.data.startswith('ACK')
+
+    def is_init(self, event):
+        return event.name == 'INIT'
+
     def to_triggers(self, event):
         for t in self._triggers:
             if getattr(self, 'is_' + t)(event):
                 yield getattr(self, t)
+
+        if event.name.isdigit():
+            yield int(event.name)
+        else:
+            yield event.name
 
 
 triggers = Triggers()
@@ -74,24 +64,6 @@ class ConfigParser(ConfigParser):
 
 class Permissions:
     pass
-
-
-def find_settings():
-    paths = [
-        '~/.config/goymachine/settings.ini',
-        '~/.goymachinerc',
-        'settings.ini'
-    ]
-
-    for path in paths:
-        expanded = os.path.expanduser(path)
-        try:
-            os.stat(expanded)
-        except FileNotFoundError:
-            continue
-        return expanded
-
-    raise NoConfigException
 
 
 class LineBuffer:
